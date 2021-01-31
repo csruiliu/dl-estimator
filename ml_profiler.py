@@ -26,12 +26,10 @@ from tensorflow_cifar.tools.dataset_loader import load_cifar10_keras
 from tensorflow_cifar.tools.model_tools import train_model
 from tensorflow_cifar.tools.model_tools import evaluate_model
 
-
+'''
 def generate_ml_workload():
-    batch_size = [32]
-    learn_rate = [0.01]
-    # batch_size = [32, 64, 128, 256]
-    # learn_rate = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+    batch_size = [32, 64, 128, 256]
+    learn_rate = [0.1, 0.01, 0.001, 0.0001, 0.00001]
     optimizer = ['SGD', 'Adam', 'Adagrad', 'Momentum']
 
     model_list = ['alexnet', 'efficientnet', 'inception', 'lenet', 'mobilenet',
@@ -40,7 +38,6 @@ def generate_ml_workload():
     combo_list = [model_list, batch_size, optimizer, learn_rate]
     conf_list = list(itertools.product(*combo_list))
 
-    '''
     combo_list_densenet = [['densenet'], batch_size, optimizer, learn_rate, [121, 169, 201, 264]]
     conf_list_densenet = list(itertools.product(*combo_list_densenet))
 
@@ -60,16 +57,18 @@ def generate_ml_workload():
     conf_list_shufflenetv2 = list(itertools.product(*combo_list_shufflenetv2))
 
     conf_list_other = conf_list_densenet + conf_list_resnet + conf_list_resnext + conf_list_vgg + conf_list_shufflenet + conf_list_shufflenetv2
-    '''
-
+    
     return conf_list
+'''
 
 
 def profile_model():
+    print('Start Profiling {}'.format(model_name))
+
     if model_name == 'alexnet':
         model = AlexNet(num_output_classes)
     elif model_name == 'densenet':
-        model = DenseNet(model_extra_para, num_output_classes)
+        model = DenseNet(model_layer, num_output_classes)
     elif model_name == 'efficientnet':
         model = EfficientNet(num_output_classes)
     elif model_name == 'inception':
@@ -81,17 +80,17 @@ def profile_model():
     elif model_name == 'mobilenetv2':
         model = MobileNetV2(num_output_classes)
     elif model_name == 'resnet':
-        model = ResNet(model_extra_para, num_output_classes)
+        model = ResNet(model_layer, num_output_classes)
     elif model_name == 'resnext':
-        model = ResNeXt(model_extra_para, num_output_classes)
+        model = ResNeXt(model_card, num_output_classes)
     elif model_name == 'shufflenet':
-        model = ShuffleNet(model_extra_para, num_output_classes)
+        model = ShuffleNet(model_group, num_output_classes)
     elif model_name == 'shufflenetv2':
-        model = ShuffleNetV2(model_extra_para, num_output_classes)
+        model = ShuffleNetV2(model_complex, num_output_classes)
     elif model_name == 'squeezenet':
         model = SqueezeNet(num_output_classes)
     elif model_name == 'vgg':
-        model = VGG(model_extra_para, num_output_classes)
+        model = VGG(model_layer, num_output_classes)
     elif model_name == 'xception':
         model = Xception(num_output_classes)
     elif model_name == 'zfnet':
@@ -176,7 +175,6 @@ def profile_model():
 
 
 if __name__ == "__main__":
-    '''
     # get parameters
     parser = argparse.ArgumentParser()
 
@@ -206,9 +204,9 @@ if __name__ == "__main__":
     learn_rate = args.learn
     optimizer = args.opt
     epoch = args.epoch
-    '''
 
-    json_file_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_acc.json'
+    # json_file_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_acc.json'
+    json_file_path = '/tank/local/ruiliu/ml-estimator/mlbase/model_acc.json'
 
     if os.path.exists(json_file_path):
         with open(json_file_path) as f:
@@ -216,36 +214,25 @@ if __name__ == "__main__":
     else:
         model_json_list = list()
 
-    conf_profile = generate_ml_workload()
+    num_output_classes = 10
+    epoch = 20
+    acc_list, total_parameters = profile_model()
 
-    for conf in conf_profile:
-        model_name = conf[0]
-        batch_size = conf[1]
-        optimizer = conf[2]
-        learn_rate = conf[3]
-        if len(conf) > 4:
-            model_extra_para = conf[4]
-            model_name = model_name + '-' + str(model_extra_para)
+    # create a dict for the conf
+    model_perf_dict = dict()
 
-        num_output_classes = 10
-        epoch = 20
-        acc_list, total_parameters = profile_model()
+    model_perf_dict['model_name'] = model_name
+    model_perf_dict['num_parameters'] = total_parameters
+    model_perf_dict['batch_size'] = batch_size
+    model_perf_dict['opt'] = optimizer
+    model_perf_dict['learn_rate'] = learn_rate
 
-        # create a dict for the conf
-        model_perf_dict = dict()
+    model_perf_dict['training_data'] = 'cifar'
+    model_perf_dict['classes'] = num_output_classes
 
-        model_perf_dict['model_name'] = model_name
-        model_perf_dict['num_parameters'] = total_parameters
-        model_perf_dict['batch_size'] = batch_size
-        model_perf_dict['opt'] = optimizer
-        model_perf_dict['learn_rate'] = learn_rate
+    model_perf_dict['accuracy'] = acc_list
 
-        model_perf_dict['training_data'] = 'cifar'
-        model_perf_dict['classes'] = num_output_classes
-
-        model_perf_dict['accuracy'] = acc_list
-
-        model_json_list.append(model_perf_dict)
+    model_json_list.append(model_perf_dict)
 
     with open(json_file_path, 'w+') as f:
         json.dump(model_json_list, f)
