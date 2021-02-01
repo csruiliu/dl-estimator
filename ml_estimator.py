@@ -1,41 +1,65 @@
 import numpy as np
 import json
-
 import matplotlib.pyplot as plt
 
 
 class MLEstimator:
-    def __init__(self, top_k):
+    def __init__(self, input_model_dict, top_k):
         self.top_k = top_k
+        self.input_model_dict = input_model_dict
         self.model_perf_list = None
-        self.acc_list = list()
-        self.epoch_list = list()
-        self.weight_list = list()
+        self.acc_list = None
+        self.epoch_list = None
+        self.weight_list = None
+        self.flag_list = None
 
     def import_accuracy_dataset(self, dataset_path):
         with open(dataset_path) as json_file:
             self.model_perf_list = json.load(json_file)
 
-    def predict_accuracy(self, input_model_dict, input_model_epoch):
-        neighbour_model_list = self.compute_model_similarity(input_model_dict, self.model_perf_list)
+    def init_predication_model(self):
+        self.acc_list = list()
+        self.epoch_list = list()
+        self.flag_list = list()
+
+        neighbour_model_list = self.compute_model_similarity(self.input_model_dict, self.model_perf_list)
 
         for model in neighbour_model_list:
             for aidx, acc in enumerate(model['accuracy']):
                 self.acc_list.append(acc)
                 self.epoch_list.append(aidx)
 
-        self.weight_list = [1 / len(self.acc_list)] * len(self.acc_list)
+        self.flag_list = [0] * len(self.acc_list)
+
+    def distill_actual_data(self, actual_data):
+        self.epoch_list.append(actual_data[0])
+        self.acc_list.append(actual_data[1])
+        self.flag_list.append(1)
+
+    def predict_accuracy(self, input_model_epoch):
+        self.weight_list = list()
+        actual_dp_num = self.flag_list.count(1)
+        base_dp_num = len(self.flag_list) - actual_dp_num
+
+        actual_weight = 1 / (actual_dp_num + 1)
+        base_weight = actual_weight / base_dp_num
+
+        for flag in self.flag_list:
+            if flag:
+                self.weight_list.append(actual_weight)
+            else:
+                self.weight_list.append(base_weight)
+
+        print(self.weight_list)
 
         coefs = np.polyfit(x=np.asarray(self.epoch_list), y=np.asarray(self.acc_list), deg=3, w=self.weight_list)
 
         '''
-        print(np.asarray(self.acc_list))
-
         plt.figure()
         plt.plot(np.arange(1, 21), np.polyval(coefs, np.arange(1, 21)), color="black")
         plt.show()
-        
         '''
+
         acc_estimation = np.polyval(coefs, input_model_epoch)
 
         return acc_estimation
@@ -86,8 +110,10 @@ if __name__ == "__main__":
     input_model['training_data'] = 'cifar'
     input_model['classes'] = 10
 
-    ml_estimator = MLEstimator(top_k=10)
+    ml_estimator = MLEstimator(input_model, top_k=10)
     ml_estimator.import_accuracy_dataset('/home/ruiliu/Development/ml-estimator/mlbase/model_acc.json')
-    acc = ml_estimator.predict_accuracy(input_model, 10)
+    ml_estimator.init_predication_model()
+    ml_estimator.distill_actual_data([1, 0.4])
+    acc = ml_estimator.predict_accuracy(10)
 
     print(acc)
