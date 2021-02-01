@@ -205,8 +205,8 @@ if __name__ == "__main__":
     optimizer = args.opt
     epoch = args.epoch
 
-    # json_file_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_acc.json'
-    json_file_path = '/tank/local/ruiliu/ml-estimator/mlbase/model_acc.json'
+    json_file_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_acc.json'
+    # json_file_path = '/tank/local/ruiliu/ml-estimator/mlbase/model_acc.json'
 
     if os.path.exists(json_file_path):
         with open(json_file_path) as f:
@@ -216,13 +216,15 @@ if __name__ == "__main__":
 
     num_output_classes = 10
     epoch = 20
-    acc_list, total_parameters = profile_model()
+
+    # training the model
+    # acc_list, total_parameters = profile_model()
 
     # create a dict for the conf
     model_perf_dict = dict()
 
     model_perf_dict['model_name'] = model_name
-    model_perf_dict['num_parameters'] = total_parameters
+    model_perf_dict['num_parameters'] = np.random.randint(low=1000000, high=5000000)
     model_perf_dict['batch_size'] = batch_size
     model_perf_dict['opt'] = optimizer
     model_perf_dict['learn_rate'] = learn_rate
@@ -230,7 +232,7 @@ if __name__ == "__main__":
     model_perf_dict['training_data'] = 'cifar'
     model_perf_dict['classes'] = num_output_classes
 
-    model_perf_dict['accuracy'] = acc_list
+    model_perf_dict['accuracy'] = list(list(np.random.uniform(0, 1, 20)))
 
     model_json_list.append(model_perf_dict)
 
