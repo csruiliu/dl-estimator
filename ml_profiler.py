@@ -28,41 +28,6 @@ from tensorflow_cifar.tools.model_tools import train_model
 from tensorflow_cifar.tools.model_tools import evaluate_model
 
 
-'''
-def generate_ml_workload():
-    batch_size = [32, 64, 128, 256]
-    learn_rate = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-    optimizer = ['SGD', 'Adam', 'Adagrad', 'Momentum']
-
-    model_list = ['alexnet', 'efficientnet', 'inception', 'lenet', 'mobilenet',
-                  'mobilenetv2', 'squeezenet', 'xception', 'zfnet']
-    
-    combo_list = [model_list, batch_size, optimizer, learn_rate]
-    conf_list = list(itertools.product(*combo_list))
-
-    combo_list_densenet = [['densenet'], batch_size, optimizer, learn_rate, [121, 169, 201, 264]]
-    conf_list_densenet = list(itertools.product(*combo_list_densenet))
-
-    combo_list_resnet = [['resnet'], batch_size, optimizer, learn_rate, [18, 34, 50, 101, 152]]
-    conf_list_resnet = list(itertools.product(*combo_list_resnet))
-
-    combo_list_resnext = [['resnext'], learn_rate, optimizer, batch_size, [1, 2, 4, 8, 32]]
-    conf_list_resnext = list(itertools.product(*combo_list_resnext))
-
-    combo_list_vgg = [['vgg'], learn_rate, optimizer, batch_size, [11, 13, 16, 19]]
-    conf_list_vgg = list(itertools.product(*combo_list_vgg))
-
-    combo_list_shufflenet = [['shufflenet'], learn_rate, optimizer, batch_size, [2, 3, 4, 8]]
-    conf_list_shufflenet = list(itertools.product(*combo_list_shufflenet))
-
-    combo_list_shufflenetv2 = [['shufflenetv2'], learn_rate, optimizer, batch_size, [0.5, 1, 1.5, 2]]
-    conf_list_shufflenetv2 = list(itertools.product(*combo_list_shufflenetv2))
-
-    conf_list_other = conf_list_densenet + conf_list_resnet + conf_list_resnext + conf_list_vgg + conf_list_shufflenet + conf_list_shufflenetv2
-    
-    return conf_list
-'''
-
 if __name__ == "__main__":
 
     ###################################
@@ -75,11 +40,11 @@ if __name__ == "__main__":
                         help='profile model accuracy or steptime')
     parser.add_argument('-m', '--model', action='store', type=str, help='indicate training model')
     parser.add_argument('-l', '--layer', action='store', type=int,
-                        help='indicate the layer for some models like resnet, densenet, resnext, vgg')
+                        help='indicate the layer for some models like resnet, densenet, vgg')
     parser.add_argument('-g', '--group', action='store', type=int,
-                        help='indicate the conv group for some models like shufflenet')
+                        help='indicate the conv group for shufflenet')
     parser.add_argument('-x', '--complex', action='store', type=float,
-                        help='indicate the model complex for some models like shufflenetv2')
+                        help='indicate the model complex for shufflenetv2')
     parser.add_argument('-c', '--card', action='store', type=int, help='indicate the cardinality for resnext')
 
     parser.add_argument('-b', '--batch', action='store', type=int, help='indicate the batch size for training.')
@@ -147,8 +112,9 @@ if __name__ == "__main__":
     train_op = train_model(logit, label_ph, optimizer, learn_rate)
     eval_op = evaluate_model(logit, label_ph)
 
-    #########################################33
+    ###########################################
     # count overall trainable parameters
+    ###########################################
 
     total_parameters = 0
     for variable in tf.trainable_variables():
@@ -235,7 +201,7 @@ if __name__ == "__main__":
     steptime_avg = sum(time_record_list) / len(time_record_list)
 
     json_acc_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_acc.json'
-    json_time_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_time.json'
+    json_time_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_time_simulate.json'
 
     # json_acc_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_acc.json'
     # json_time_path = '/home/ruiliu/Development/ml-estimator/mlbase/model_time.json'
@@ -280,8 +246,9 @@ if __name__ == "__main__":
 
         model_perf_dict['model_name'] = model_name
         model_perf_dict['num_parameters'] = total_parameters
-        # model_perf_dict['num_parameters'] = np.random.randint(low=1000000, high=5000000)
         model_perf_dict['batch_size'] = batch_size
+        model_perf_dict['input_chn'] = train_feature.shape[-1]
+        model_perf_dict['input_size'] = train_feature.shape[1] * train_feature.shape[2]
         model_perf_dict['opt'] = optimizer
         model_perf_dict['learn_rate'] = learn_rate
 
@@ -289,6 +256,7 @@ if __name__ == "__main__":
         model_perf_dict['classes'] = num_output_classes
 
         model_perf_dict['steptime'] = steptime_avg
+        # model_perf_dict['steptime'] = np.random.randint(low=1, high=100)
 
         model_json_list.append(model_perf_dict)
 
